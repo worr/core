@@ -1417,19 +1417,11 @@ static FnCallResult FnCallTextXform(ARG_UNUSED EvalContext *ctx, ARG_UNUSED cons
 {
     char *buf = NULL;
     char *string = RlistScalarValue(finalargs);
-    FnCallResult ret;
     size_t len = strlen(string);
-	size_t bufsiz = len + 1 < 2 ? 2 : len + 1;
-
-    if (len > CF_INFINITY)
-    {
-        free(buf);
-        Log(LOG_LEVEL_ERR, "%s: unable to parse without truncating", fp->name);
-        return FnFailure();
-    }
+    size_t bufsiz = MAX(len + 1, PRINTSIZE(len));
 
     buf = xcalloc(bufsiz, sizeof(char));
-    (void)strlcpy(buf, string, bufsiz);
+    memcpy(buf, string, len);
 
     if (!strcmp(fp->name, "string_downcase"))
     {
@@ -1474,7 +1466,7 @@ static FnCallResult FnCallTextXform(ARG_UNUSED EvalContext *ctx, ARG_UNUSED cons
         const long max = IntFromString(RlistScalarValue(finalargs->next));
         if (max < len)
         {
-            strncpy(buf, string + len - max, len);
+            memcpy(buf, string + len - max, max + 1);
         }
     }
     else
@@ -1484,9 +1476,7 @@ static FnCallResult FnCallTextXform(ARG_UNUSED EvalContext *ctx, ARG_UNUSED cons
         return FnFailure();
     }
 
-    ret = FnReturn(buf);
-    free(buf);
-    return ret;
+    return FnReturnNoCopy(buf);
 }
 
 /*********************************************************************/
@@ -5248,7 +5238,7 @@ static FnCallResult FnCallReadFile(ARG_UNUSED EvalContext *ctx, ARG_UNUSED const
 {
     char *filename = RlistScalarValue(finalargs);
     char *requested_max = RlistScalarValue(finalargs->next);
-    int maxsize = IntFromString(requested_max);
+    long maxsize = IntFromString(requested_max);
 
     if (maxsize > CF_INFINITY)
     {
