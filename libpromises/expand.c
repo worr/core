@@ -1133,6 +1133,13 @@ static void ResolveControlBody(EvalContext *ctx, GenericAgentConfig *config,
             /* Ignored */
         }
 
+        if (strcmp(lval, CFG_CONTROLBODY[COMMON_CONTROL_FAIL_UNEXPANDED_VARS].lval) == 0)
+        {
+            bool fail_unexpanded_vars = BooleanFromString(RvalScalarValue(evaluated_rval));
+            EvalContextSetFailUnexpanded(ctx, fail_unexpanded_vars);
+            Log(LOG_LEVEL_VERBOSE, "Setting fail_unexpanded_vars to '%s'", fail_unexpanded_vars ? "true" : "false");
+        }
+
         RvalDestroy(evaluated_rval);
     }
 

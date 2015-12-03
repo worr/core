@@ -266,6 +266,7 @@ const ConstraintSyntax CFG_CONTROLBODY[COMMON_CONTROL_MAX + 1] =
     ConstraintSyntaxNewString("tls_min_version", "", "Minimum acceptable TLS version for outgoing connections, defaults to OpenSSL's default", SYNTAX_STATUS_NORMAL),
     ConstraintSyntaxNewStringList("package_inventory", ".*", "Name of the package manager used for software inventory management", SYNTAX_STATUS_NORMAL),
     ConstraintSyntaxNewString("package_module", ".*", "Name of the default package manager", SYNTAX_STATUS_NORMAL),
+    ConstraintSyntaxNewBool("fail_unexpanded_vars", "Trigger a failure when variables fail to expand. Default value: false", SYNTAX_STATUS_NORMAL),
     ConstraintSyntaxNewNull()
 };
 

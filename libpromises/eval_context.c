@@ -74,6 +74,7 @@ struct EvalContext_
     bool checksum_updates_default;
     Item *ip_addresses;
     bool ignore_locks;
+    bool fail_unexpanded_vars;
 
     int pass;
     Rlist *args;
@@ -2622,4 +2623,14 @@ void EvalContextSetIgnoreLocks(EvalContext *ctx, bool ignore)
 bool EvalContextIsIgnoringLocks(const EvalContext *ctx)
 {
     return ctx->ignore_locks;
+}
+
+void EvalContextSetFailUnexpanded(EvalContext *ctx, bool fail)
+{
+    ctx->fail_unexpanded_vars = fail;
+}
+
+bool EvalContextFailOnUnexpanded(EvalContext *ctx)
+{
+    return ctx->fail_unexpanded_vars;
 }

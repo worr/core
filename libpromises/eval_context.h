@@ -207,6 +207,9 @@ bool EvalContextGetEvalOption(EvalContext *ctx, EvalContextOption option);
 bool EvalContextIsIgnoringLocks(const EvalContext *ctx);
 void EvalContextSetIgnoreLocks(EvalContext *ctx, bool ignore);
 
+void EvalContextSetFailUnexpanded(EvalContext *ctx, bool fail);
+bool EvalContextFailOnUnexpanded(EvalContext *ctx);
+
 void EvalContextSetLaunchDirectory(EvalContext *ctx, const char *path);
 
 bool Abort(EvalContext *ctx);
