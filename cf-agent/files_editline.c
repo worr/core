@@ -1155,7 +1155,10 @@ static int ReplacePatterns(EvalContext *ctx, Item *file_start, Item *file_end, A
 
             match_len = end_off - start_off;
             BufferClear(replace);
-            ExpandScalar(ctx, PromiseGetBundle(pp)->ns, PromiseGetBundle(pp)->name, a.replace.replace_value, replace);
+            if (! ExpandScalarAndFail(ctx, pp, a, result, a.replace.replace_value, replace))
+            {
+                break;
+            }
 
             Log(LOG_LEVEL_VERBOSE, "Verifying replacement of '%s' with '%s', cutoff %d", pp->promiser, BufferData(replace),
                   cutoff);
@@ -1643,7 +1646,11 @@ static int InsertFileAtLocation(EvalContext *ctx, Item **start, Item *begin_ptr,
         BufferClear(exp);
         if (a.expandvars)
         {
-            ExpandScalar(ctx, PromiseGetBundle(pp)->ns, PromiseGetBundle(pp)->name, buf, exp);
+            if (! ExpandScalarAndFail(ctx, pp, a, result, buf, exp))
+            {
+                retval = false;
+                continue;
+            }
         }
         else
         {

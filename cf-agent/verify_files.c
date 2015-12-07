@@ -210,7 +210,12 @@ static char *ExpandThisPromiserScalar(EvalContext *ctx, const char *ns, const ch
         return NULL;
     }
     Buffer *expanded = BufferNew();
-    ExpandScalar(ctx, ns, scope, source, expanded);
+    if (! ExpandScalar(ctx, ns, scope, source, expanded))
+    {
+        BufferDestroy(expanded);
+        return NULL;
+    }
+
     char *result = strdup(BufferData(expanded));
     BufferDestroy(expanded);
     return result;

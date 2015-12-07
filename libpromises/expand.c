@@ -182,7 +182,12 @@ static PromiseResult ExpandPromiseAndDo(EvalContext *ctx, const Promise *pp,
             {
                 // This ordering is necessary to get automated canonification
                 BufferClear(expbuf);
-                ExpandScalar(ctx, NULL, "this", handle, expbuf);
+                if (! ExpandScalar(ctx, NULL, "this", handle, expbuf))
+                {
+                    result = PromiseResultUpdate(result, PROMISE_RESULT_FAIL);
+                    continue;
+                }
+
                 CanonifyNameInPlace(BufferGet(expbuf));
                 EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_THIS, "handle", BufferData(expbuf), CF_DATA_TYPE_STRING, "source=promise");
             }
@@ -590,6 +595,7 @@ Rval ExpandPrivateRval(EvalContext *ctx,
     case RVAL_TYPE_SCALAR:
         {
             Buffer *buffer = BufferNew();
+            // XXX: Revisit for variable expansion in decls
             ExpandScalar(ctx, ns, scope, rval_item, buffer);
             returnval = (Rval) { BufferClose(buffer),  RVAL_TYPE_SCALAR };
         }
@@ -679,7 +685,7 @@ bool ExpandScalar(const EvalContext *ctx,
         {
             Buffer *temp = BufferCopy(current_item);
             BufferClear(current_item);
-            ExpandScalar(ctx, ns, scope, BufferData(temp), current_item);
+            fully_expanded = ExpandScalar(ctx, ns, scope, BufferData(temp), current_item);
             BufferDestroy(temp);
         }
 
@@ -722,6 +728,8 @@ bool ExpandScalar(const EvalContext *ctx,
                     BufferDestroy(current_item);
                     return false;
                 }
+
+                fully_expanded = false;
                 break;
             }
         }
@@ -1421,4 +1429,17 @@ PromiseResult CommonEvalPromise(EvalContext *ctx, const Promise *pp,
     PromiseRecheckAllConstraints(ctx, pp);
 
     return PROMISE_RESULT_NOOP;
+}
+
+bool ExpandScalarAndFail(EvalContext *ctx, const Promise *pp, Attributes a,
+                         PromiseResult *result, const char *string, Buffer *out)
+{
+    if (! ExpandScalar(ctx, PromiseGetBundle(pp)->ns, PromiseGetBundle(pp)->name, string, out))
+    {
+        cfPS(ctx, LOG_LEVEL_ERR, PROMISE_RESULT_FAIL, pp, a, "Could not expand variable '%s'.", string);
+        *result = PromiseResultUpdate(*result, PROMISE_RESULT_FAIL);
+        return false;
+    }
+
+    return true;
 }

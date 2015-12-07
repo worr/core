@@ -88,12 +88,18 @@ PromiseResult VerifyMethod(EvalContext *ctx, const Rval call, Attributes a, cons
 {
     const Rlist *args = NULL;
     Buffer *method_name = BufferNew();
+    PromiseResult result = PROMISE_RESULT_NOOP;
     switch (call.type)
     {
     case RVAL_TYPE_FNCALL:
     {
         const FnCall *fp = RvalFnCallValue(call);
-        ExpandScalar(ctx, PromiseGetBundle(pp)->ns, PromiseGetBundle(pp)->name, fp->name, method_name);
+        if (! ExpandScalarAndFail(ctx, pp, a, &result, fp->name, method_name))
+        {
+            BufferDestroy(method_name);
+            return result;
+        }
+
         args = fp->args;
         int arg_index = 0;
         while (args)
@@ -115,8 +121,11 @@ PromiseResult VerifyMethod(EvalContext *ctx, const Rval call, Attributes a, cons
 
     case RVAL_TYPE_SCALAR:
     {
-        ExpandScalar(ctx, PromiseGetBundle(pp)->ns, PromiseGetBundle(pp)->name,
-                     RvalScalarValue(call), method_name);
+        if (! ExpandScalarAndFail(ctx, pp, a, &result, RvalScalarValue(call), method_name))
+        {
+            BufferDestroy(method_name);
+            return result;
+        }
         args = NULL;
     }
     break;
@@ -144,8 +153,6 @@ PromiseResult VerifyMethod(EvalContext *ctx, const Rval call, Attributes a, cons
     {
         bp = EvalContextResolveBundleExpression(ctx, PromiseGetPolicy(pp), BufferData(method_name), "common");
     }
-
-    PromiseResult result = PROMISE_RESULT_NOOP;
 
     if (bp)
     {

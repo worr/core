@@ -63,19 +63,28 @@ static VersionCmpResult RunCmpCommand(EvalContext *ctx, const char *command, con
 {
     Buffer *expanded_command = BufferNew();
     {
+        bool expansion_success = true;
         VarRef *ref_v1 = VarRefParseFromScope("v1", PACKAGES_CONTEXT);
         EvalContextVariablePut(ctx, ref_v1, v1, CF_DATA_TYPE_STRING, "source=promise");
 
         VarRef *ref_v2 = VarRefParseFromScope("v2", PACKAGES_CONTEXT);
         EvalContextVariablePut(ctx, ref_v2, v2, CF_DATA_TYPE_STRING, "source=promise");
 
-        ExpandScalar(ctx, NULL, PACKAGES_CONTEXT, command, expanded_command);
+        expansion_success = ExpandScalar(ctx, NULL, PACKAGES_CONTEXT, command, expanded_command);
 
         EvalContextVariableRemove(ctx, ref_v1);
         VarRefDestroy(ref_v1);
 
         EvalContextVariableRemove(ctx, ref_v2);
         VarRefDestroy(ref_v2);
+
+        if (! expansion_success)
+        {
+            cfPS(ctx, LOG_LEVEL_ERR, PROMISE_RESULT_FAIL, pp, a, "Could not expand variable '%s'.", command);
+            *result = PromiseResultUpdate(*result, PROMISE_RESULT_FAIL);
+            BufferDestroy(expanded_command);
+            return VERCMP_ERROR;
+        }
     }
 
     FILE *pfp = a.packages.package_commands_useshell ? cf_popen_sh(BufferData(expanded_command), "w") : cf_popen(BufferData(expanded_command), "w", true);

@@ -1608,7 +1608,12 @@ static bool TransformFile(EvalContext *ctx, char *file, Attributes attr, const P
     }
 
     Buffer *command = BufferNew();
-    ExpandScalar(ctx, PromiseGetBundle(pp)->ns, PromiseGetBundle(pp)->name, attr.transformer, command);
+    if (! ExpandScalarAndFail(ctx, pp, attr, result, attr.transformer, command))
+    {
+        BufferDestroy(command);
+        return false;
+    }
+
     Log(LOG_LEVEL_INFO, "Transforming '%s' ", BufferData(command));
 
     if (!IsExecutable(CommandArg0(BufferData(command))))
@@ -2604,10 +2609,14 @@ static PromiseResult VerifyCopiedFileAttributes(EvalContext *ctx, const char *sr
 static PromiseResult CopyFileSources(EvalContext *ctx, char *destination, Attributes attr, const Promise *pp, AgentConnection *conn)
 {
     Buffer *source = BufferNew();
+    PromiseResult result = PROMISE_RESULT_NOOP;
     // Expand this.promiser
-    ExpandScalar(ctx,
-                 PromiseGetBundle(pp)->ns, PromiseGetBundle(pp)->name,
-                 attr.copy.source, source);
+    if (! ExpandScalarAndFail(ctx, pp, attr, &result, attr.copy.source, source))
+    {
+        BufferDestroy(source);
+        return result;
+    }
+
     char vbuff[CF_BUFSIZE];
     struct stat ssb, dsb;
     struct timespec start;
@@ -2651,7 +2660,6 @@ static PromiseResult CopyFileSources(EvalContext *ctx, char *destination, Attrib
 
     CompressedArray *inode_cache = NULL;
 
-    PromiseResult result = PROMISE_RESULT_NOOP;
     if (S_ISDIR(ssb.st_mode))   /* could be depth_search */
     {
         if (attr.copy.purge)

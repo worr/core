@@ -1467,6 +1467,8 @@ static PromiseResult SchedulePackageOp(EvalContext *ctx, const char *name, const
 
 /* Now we need to know the name-convention expected by the package manager */
 
+    bool buffer_expanded = true;
+    const char *buf_nam = NULL;
     Buffer *expanded = BufferNew();
     if ((a.packages.package_name_convention) || (a.packages.package_delete_convention))
     {
@@ -1481,12 +1483,14 @@ static PromiseResult SchedulePackageOp(EvalContext *ctx, const char *name, const
 
         if ((a.packages.package_delete_convention) && (a.packages.package_policy == PACKAGE_ACTION_DELETE))
         {
-            ExpandScalar(ctx, NULL, PACKAGES_CONTEXT, a.packages.package_delete_convention, expanded);
+            buf_nam = a.packages.package_delete_convention;
+            buffer_expanded = ExpandScalar(ctx, NULL, PACKAGES_CONTEXT, a.packages.package_delete_convention, expanded);
             strlcpy(id, BufferData(expanded), CF_EXPANDSIZE);
         }
         else if (a.packages.package_name_convention)
         {
-            ExpandScalar(ctx, NULL, PACKAGES_CONTEXT, a.packages.package_name_convention, expanded);
+            buf_nam = a.packages.package_name_convention;
+            buffer_expanded = ExpandScalar(ctx, NULL, PACKAGES_CONTEXT, a.packages.package_name_convention, expanded);
             strlcpy(id, BufferData(expanded), CF_EXPANDSIZE);
         }
         else
@@ -1506,6 +1510,13 @@ static PromiseResult SchedulePackageOp(EvalContext *ctx, const char *name, const
     else
     {
         strlcpy(id, name, CF_EXPANDSIZE);
+    }
+
+    if (! buffer_expanded)
+    {
+        Log(LOG_LEVEL_ERR, "Could not expand variable '%s'.", buf_nam);
+        BufferDestroy(expanded);
+        return PROMISE_RESULT_FAIL;
     }
 
     Log(LOG_LEVEL_VERBOSE, "Package promises to refer to itself as '%s' to the manager", id);
@@ -1570,7 +1581,7 @@ static PromiseResult SchedulePackageOp(EvalContext *ctx, const char *name, const
                     BufferClear(expanded);
                     if (a.packages.package_name_convention)
                     {
-                        ExpandScalar(ctx, NULL, PACKAGES_CONTEXT_ANYVER, a.packages.package_name_convention, expanded);
+                        buffer_expanded = ExpandScalar(ctx, NULL, PACKAGES_CONTEXT_ANYVER, a.packages.package_name_convention, expanded);
                     }
 
                     EvalContextVariableRemove(ctx, ref_name);
@@ -1581,6 +1592,13 @@ static PromiseResult SchedulePackageOp(EvalContext *ctx, const char *name, const
 
                     EvalContextVariableRemove(ctx, ref_arch);
                     VarRefDestroy(ref_arch);
+                }
+
+                if (! buffer_expanded)
+                {
+                    Log(LOG_LEVEL_ERR, "Could not expand variable '%s'.", buf_nam);
+                    BufferDestroy(expanded);
+                    return PROMISE_RESULT_FAIL;
                 }
 
                 EscapeSpecialChars(BufferData(expanded), refAnyVerEsc, sizeof(refAnyVerEsc), "(.*)","");
@@ -1739,7 +1757,7 @@ static PromiseResult SchedulePackageOp(EvalContext *ctx, const char *name, const
                 EvalContextVariablePut(ctx, ref_arch, arch, CF_DATA_TYPE_STRING, "source=promise");
 
                 BufferClear(expanded);
-                ExpandScalar(ctx, NULL, PACKAGES_CONTEXT_ANYVER, a.packages.package_name_convention, expanded);
+                buffer_expanded = ExpandScalar(ctx, NULL, PACKAGES_CONTEXT_ANYVER, a.packages.package_name_convention, expanded);
 
                 EvalContextVariableRemove(ctx, ref_name);
                 VarRefDestroy(ref_name);
@@ -1751,6 +1769,13 @@ static PromiseResult SchedulePackageOp(EvalContext *ctx, const char *name, const
                 VarRefDestroy(ref_arch);
             }
 
+
+            if (! buffer_expanded)
+            {
+                Log(LOG_LEVEL_ERR, "Could not expand variable '%s'.", buf_nam);
+                BufferDestroy(expanded);
+                return PROMISE_RESULT_FAIL;
+            }
 
             EscapeSpecialChars(BufferData(expanded), refAnyVerEsc, sizeof(refAnyVerEsc), "(.*)","");
 
@@ -1822,7 +1847,7 @@ static PromiseResult SchedulePackageOp(EvalContext *ctx, const char *name, const
                     EvalContextVariablePut(ctx, ref_arch, inst_arch, CF_DATA_TYPE_STRING, "source=promise");
 
                     BufferClear(expanded);
-                    ExpandScalar(ctx, NULL, PACKAGES_CONTEXT, a.packages.package_delete_convention, expanded);
+                    buffer_expanded = ExpandScalar(ctx, NULL, PACKAGES_CONTEXT, a.packages.package_delete_convention, expanded);
                     id_del = BufferData(expanded);
 
                     EvalContextVariableRemove(ctx, ref_name);
@@ -1833,6 +1858,13 @@ static PromiseResult SchedulePackageOp(EvalContext *ctx, const char *name, const
 
                     EvalContextVariableRemove(ctx, ref_arch);
                     VarRefDestroy(ref_arch);
+                }
+
+                if (! buffer_expanded)
+                {
+                    Log(LOG_LEVEL_ERR, "Could not expand variable '%s'.", buf_nam);
+                    BufferDestroy(expanded);
+                    return PROMISE_RESULT_FAIL;
                 }
 
                 Log(LOG_LEVEL_VERBOSE, "Scheduling package with id '%s' for deletion", id_del);
