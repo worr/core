@@ -592,6 +592,7 @@ typedef struct
 {
     void *item;
     RvalType type;
+    bool expanded;
 } Rval;
 
 typedef struct Rlist_ Rlist;

@@ -175,6 +175,7 @@ FnCall *ExpandFnCall(EvalContext *ctx, const char *ns, const char *scope, const 
     {
         // e.g. usebundle => $(m)(arg0, arg1);
         Buffer *buf = BufferNewWithCapacity(CF_MAXVARSIZE);
+        // XXX: check this?
         ExpandScalar(ctx, ns, scope, f->name, buf);
 
         result = FnCallNew(BufferData(buf), ExpandList(ctx, ns, scope, f->args, false));

@@ -144,7 +144,7 @@ PromiseIterator *PromiseIteratorNew(EvalContext *ctx, const Promise *pp, const R
 
         VarRefDestroy(ref);
 
-        CfAssoc *new_var = NewAssoc(RlistScalarValue(rp), (Rval) { (void *)value, DataTypeToRvalType(dtype) }, dtype);
+        CfAssoc *new_var = NewAssoc(RlistScalarValue(rp), (Rval) { (void *)value, DataTypeToRvalType(dtype), false }, dtype);
         iter->has_null_list |= !AppendIterationVariable(iter, new_var);
     }
 

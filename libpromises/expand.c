@@ -129,7 +129,7 @@ PromiseResult ExpandPromise(EvalContext *ctx, const Promise *pp,
 
     Promise *pcopy = DeRefCopyPromise(ctx, pp);
 
-    MapIteratorsFromRval(ctx, PromiseGetBundle(pp), (Rval) { pcopy->promiser, RVAL_TYPE_SCALAR }, &scalars, &lists, &containers);
+    MapIteratorsFromRval(ctx, PromiseGetBundle(pp), (Rval) { pcopy->promiser, RVAL_TYPE_SCALAR, false }, &scalars, &lists, &containers);
 
     if (pcopy->promisee.item != NULL)
     {
@@ -587,8 +587,10 @@ Rval ExpandPrivateRval(EvalContext *ctx,
                        const void *rval_item, RvalType rval_type)
 {
     Rval returnval;
+    bool expanded;
     returnval.item = NULL;
     returnval.type = RVAL_TYPE_NOPROMISEE;
+    returnval.expanded = false;
 
     switch (rval_type)
     {
@@ -596,23 +598,26 @@ Rval ExpandPrivateRval(EvalContext *ctx,
         {
             Buffer *buffer = BufferNew();
             // XXX: Revisit for variable expansion in decls
-            ExpandScalar(ctx, ns, scope, rval_item, buffer);
-            returnval = (Rval) { BufferClose(buffer),  RVAL_TYPE_SCALAR };
+            expanded = ExpandScalar(ctx, ns, scope, rval_item, buffer);
+            returnval = (Rval) { BufferClose(buffer),  RVAL_TYPE_SCALAR, expanded };
         }
         break;
 
     case RVAL_TYPE_LIST:
         returnval.item = ExpandList(ctx, ns, scope, rval_item, true);
         returnval.type = RVAL_TYPE_LIST;
+        returnval.expanded = true;
         break;
 
     case RVAL_TYPE_FNCALL:
         returnval.item = ExpandFnCall(ctx, ns, scope, rval_item);
         returnval.type = RVAL_TYPE_FNCALL;
+        returnval.expanded = true;
         break;
 
     case RVAL_TYPE_CONTAINER:
         returnval = RvalNew(rval_item, RVAL_TYPE_CONTAINER);
+        returnval.expanded = true;
         break;
 
     case RVAL_TYPE_NOPROMISEE:
@@ -634,12 +639,12 @@ Rval ExpandBundleReference(EvalContext *ctx,
     case RVAL_TYPE_SCALAR:
         {
             Buffer *buffer = BufferNew();
-            ExpandScalar(ctx, ns, scope, RvalScalarValue(rval), buffer);
-            return (Rval) { BufferClose(buffer), RVAL_TYPE_SCALAR };
+            bool expanded = ExpandScalar(ctx, ns, scope, RvalScalarValue(rval), buffer);
+            return (Rval) { BufferClose(buffer), RVAL_TYPE_SCALAR, expanded };
         }
 
     case RVAL_TYPE_FNCALL:
-        return (Rval) {ExpandFnCall(ctx, ns, scope, RvalFnCallValue(rval)), RVAL_TYPE_FNCALL};
+        return (Rval) {ExpandFnCall(ctx, ns, scope, RvalFnCallValue(rval)), RVAL_TYPE_FNCALL, true};
 
     case RVAL_TYPE_CONTAINER:
     case RVAL_TYPE_LIST:
@@ -785,6 +790,7 @@ Rval EvaluateFinalRval(EvalContext *ctx, const Policy *policy,
             {
                 returnval.item = ExpandList(ctx, ns, scope, value, true);
                 returnval.type = RVAL_TYPE_LIST;
+                returnval.expanded = true;
             }
 
             VarRefDestroy(ref);
@@ -797,6 +803,7 @@ Rval EvaluateFinalRval(EvalContext *ctx, const Policy *policy,
     else if (FnCallIsBuiltIn(rval))
     {
         returnval = RvalCopy(rval);
+        returnval.expanded = true;
     }
     else
     {

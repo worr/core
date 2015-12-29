@@ -87,7 +87,7 @@ Rval DefaultBundleConstraint(const Promise *pp, char *promisetype)
 {
     static char name[CF_BUFSIZE];
     snprintf(name, CF_BUFSIZE, "%s_%s", promisetype, CanonifyName(pp->promiser));
-    return (Rval) { name, RVAL_TYPE_SCALAR };
+    return (Rval) { name, RVAL_TYPE_SCALAR, false };
 }
 
 /*************************************************************************/
@@ -1276,7 +1276,7 @@ Body *PolicyAppendBody(Policy *policy, const char *ns, const char *name, const c
         RlistAppendRval(&args, RvalNew("$(this.service_policy)", RVAL_TYPE_SCALAR));
 
         FnCall *service_bundle = FnCallNew("standard_services", args);
-        BodyAppendConstraint(body, "service_bundle", (Rval) { service_bundle, RVAL_TYPE_FNCALL }, "any", false);
+        BodyAppendConstraint(body, "service_bundle", (Rval) { service_bundle, RVAL_TYPE_FNCALL, true }, "any", false);
     }
 
     return body;
@@ -1442,7 +1442,7 @@ Constraint *PromiseAppendConstraint(Promise *pp, const char *lval, Rval rval, bo
                     // append the old Rval (a function call) under the arguments of the new one
                     RlistAppend(&synthetic_args, rval.item, RVAL_TYPE_FNCALL);
 
-                    Rval replacement = (Rval) { FnCallNew(xstrdup("and"), synthetic_args), RVAL_TYPE_FNCALL };
+                    Rval replacement = (Rval) { FnCallNew(xstrdup("and"), synthetic_args), RVAL_TYPE_FNCALL, true };
                     Log(LOG_LEVEL_DEBUG, "PromiseAppendConstraint: MERGED %s rval %s", old_cp->lval, RvalToString(replacement));
 
                     // overwrite the old Constraint rval with its replacement
@@ -2042,7 +2042,7 @@ static Rval RvalFromJson(JsonElement *json_rval)
     if (strcmp("string", type) == 0 || strcmp("symbol", type) == 0)
     {
         const char *value = JsonObjectGetAsString(json_rval, "value");
-        return ((Rval) { xstrdup(value), RVAL_TYPE_SCALAR });
+        return ((Rval) { xstrdup(value), RVAL_TYPE_SCALAR, false });
     }
     else if (strcmp("list", type) == 0)
     {
@@ -2055,7 +2055,7 @@ static Rval RvalFromJson(JsonElement *json_rval)
             RlistAppend(&rlist, list_value.item, list_value.type);
         }
 
-        return ((Rval) { rlist, RVAL_TYPE_LIST });
+        return ((Rval) { rlist, RVAL_TYPE_LIST, true });
     }
     else if (strcmp("functionCall", type) == 0)
     {
@@ -2073,7 +2073,7 @@ static Rval RvalFromJson(JsonElement *json_rval)
 
         FnCall *fn = FnCallNew(name, args);
 
-        return ((Rval) { fn, RVAL_TYPE_FNCALL });
+        return ((Rval) { fn, RVAL_TYPE_FNCALL, true });
     }
     else
     {
@@ -2099,7 +2099,7 @@ static Promise *PromiseTypeAppendPromiseJson(PromiseType *promise_type, JsonElem
 {
     const char *promiser = JsonObjectGetAsString(json_promise, "promiser");
 
-    Promise *promise = PromiseTypeAppendPromise(promise_type, promiser, (Rval) { NULL, RVAL_TYPE_NOPROMISEE }, context, NULL);
+    Promise *promise = PromiseTypeAppendPromise(promise_type, promiser, (Rval) { NULL, RVAL_TYPE_NOPROMISEE, false }, context, NULL);
 
     JsonElement *json_attributes = JsonObjectGetAsArray(json_promise, "attributes");
     for (size_t i = 0; i < JsonLength(json_attributes); i++)

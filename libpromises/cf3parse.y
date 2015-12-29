@@ -459,7 +459,7 @@ promiser_statement:    promiser
                                }
 
                                P.currentpromise = PromiseTypeAppendPromise(P.currentstype, P.promiser,
-                                                                (Rval) { NULL, RVAL_TYPE_NOPROMISEE },
+                                                                (Rval) { NULL, RVAL_TYPE_NOPROMISEE, false },
                                                                            P.currentclasses ? P.currentclasses : "any",
                                                                            P.currentvarclasses);
                                P.currentpromise->offset.line = CURRENT_PROMISER_LINE;
@@ -588,7 +588,7 @@ constraint:            constraint_id                        /* BUNDLE ONLY */
                                                RlistAppendScalar(&synthetic_args, xstrndup(P.rval.item+2, strlen(P.rval.item)-3 ));
                                                RvalDestroy(P.rval);
 
-                                               P.rval = (Rval) { FnCallNew(xstrdup("mergedata"), synthetic_args), RVAL_TYPE_FNCALL };
+                                               P.rval = (Rval) { FnCallNew(xstrdup("mergedata"), synthetic_args), RVAL_TYPE_FNCALL, false };
                                            }
                                            // convert 'json or yaml' to direct container or parsejson(x) or parseyaml(x)
                                            else if (P.rval.type == RVAL_TYPE_SCALAR &&
@@ -645,12 +645,12 @@ constraint:            constraint_id                        /* BUNDLE ONLY */
                                                        RlistAppendScalar(&synthetic_args, xstrdup(P.rval.item));
                                                        RvalDestroy(P.rval);
 
-                                                       P.rval = (Rval) { FnCallNew(xstrdup(fname), synthetic_args), RVAL_TYPE_FNCALL };
+                                                       P.rval = (Rval) { FnCallNew(xstrdup(fname), synthetic_args), RVAL_TYPE_FNCALL, false };
                                                    }
                                                    else
                                                    {
                                                        RvalDestroy(P.rval);
-                                                       P.rval = (Rval) { json, RVAL_TYPE_CONTAINER };
+                                                       P.rval = (Rval) { json, RVAL_TYPE_CONTAINER, false };
                                                    }
                                                }
                                            }
@@ -974,21 +974,21 @@ rval:                  IDSYNTAX
                        {
                            ParserDebug("\tP:%s:%s:%s:%s id rval, %s = %s\n", P.block, P.blocktype, P.blockid, P.currentclasses ? P.currentclasses : "any", P.lval, P.currentid);
                            RvalDestroy(P.rval);
-                           P.rval = (Rval) { xstrdup(P.currentid), RVAL_TYPE_SCALAR };
+                           P.rval = (Rval) { xstrdup(P.currentid), RVAL_TYPE_SCALAR, false };
                            P.references_body = true;
                        }
                      | BLOCKID
                        {
                            ParserDebug("\tP:%s:%s:%s:%s blockid rval, %s = %s\n", P.block, P.blocktype, P.blockid, P.currentclasses ? P.currentclasses : "any", P.lval, P.currentid);
                            RvalDestroy(P.rval);
-                           P.rval = (Rval) { xstrdup(P.currentid), RVAL_TYPE_SCALAR };
+                           P.rval = (Rval) { xstrdup(P.currentid), RVAL_TYPE_SCALAR, false };
                            P.references_body = true;
                        }
                      | QSTRING
                        {
                            ParserDebug("\tP:%s:%s:%s:%s qstring rval, %s = %s\n", P.block, P.blocktype, P.blockid, P.currentclasses ? P.currentclasses : "any", P.lval, P.currentstring);
                            RvalDestroy(P.rval);
-                           P.rval = (Rval) { P.currentstring, RVAL_TYPE_SCALAR };
+                           P.rval = (Rval) { P.currentstring, RVAL_TYPE_SCALAR, false };
 
                            P.currentstring = NULL;
                            P.references_body = false;
@@ -1005,7 +1005,7 @@ rval:                  IDSYNTAX
                        {
                            ParserDebug("\tP:%s:%s:%s:%s nakedvar rval, %s = %s\n", P.block, P.blocktype, P.blockid, P.currentclasses ? P.currentclasses : "any", P.lval, P.currentstring);
                            RvalDestroy(P.rval);
-                           P.rval = (Rval) { P.currentstring, RVAL_TYPE_SCALAR };
+                           P.rval = (Rval) { P.currentstring, RVAL_TYPE_SCALAR, false };
 
                            P.currentstring = NULL;
                            P.references_body = false;
@@ -1018,7 +1018,7 @@ rval:                  IDSYNTAX
                                RlistAppendScalar(&P.currentRlist, CF_NULL_VALUE);
                            }
                            RvalDestroy(P.rval);
-                           P.rval = (Rval) { RlistCopy(P.currentRlist), RVAL_TYPE_LIST };
+                           P.rval = (Rval) { RlistCopy(P.currentRlist), RVAL_TYPE_LIST, false };
                            RlistDestroy(P.currentRlist);
                            P.currentRlist = NULL;
                            P.references_body = false;
@@ -1026,7 +1026,7 @@ rval:                  IDSYNTAX
                      | usefunction
                        {
                            RvalDestroy(P.rval);
-                           P.rval = (Rval) { P.currentfncall[P.arg_nesting+1], RVAL_TYPE_FNCALL };
+                           P.rval = (Rval) { P.currentfncall[P.arg_nesting+1], RVAL_TYPE_FNCALL, false };
                            P.currentfncall[P.arg_nesting+1] = NULL;
                            P.references_body = false;
                        }
@@ -1214,7 +1214,7 @@ gaitem:                IDSYNTAX
                            /* Careful about recursion */
                            ParserDebug("\tP:%s:%s:%s:%s function %s, nakedvar arg = %s\n", P.block, P.blocktype, P.blockid, P.currentclasses ? P.currentclasses : "any", P.currentfnid[P.arg_nesting], P.currentstring);
                            RlistAppend(&P.giveargs[P.arg_nesting], P.currentfncall[P.arg_nesting+1], RVAL_TYPE_FNCALL);
-                           RvalDestroy((Rval) { P.currentfncall[P.arg_nesting+1], RVAL_TYPE_FNCALL });
+                           RvalDestroy((Rval) { P.currentfncall[P.arg_nesting+1], RVAL_TYPE_FNCALL, false });
                            P.currentfncall[P.arg_nesting+1] = NULL;
                        }
 

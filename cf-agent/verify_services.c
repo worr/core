@@ -249,7 +249,7 @@ static PromiseResult DoVerifyServices(EvalContext *ctx, Attributes a, const Prom
         }
         else
         {
-            call = (Rval) { DefaultServiceBundleCall(pp, a.service.service_policy), RVAL_TYPE_FNCALL };
+            call = (Rval) { DefaultServiceBundleCall(pp, a.service.service_policy), RVAL_TYPE_FNCALL, false };
         }
     }
     a.havebundle = true;

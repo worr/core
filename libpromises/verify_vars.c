@@ -211,6 +211,11 @@ PromiseResult VerifyVarPromise(EvalContext *ctx, const Promise *pp, bool allow_d
             /* See if the variable needs recursively expanding again */
 
             Rval returnval = EvaluateFinalRval(ctx, PromiseGetPolicy(pp), ref->ns, ref->scope, rval, true, pp);
+            if (! returnval.expanded)
+            {
+                Log(LOG_LEVEL_ERR, "Variable '%s' was not able to be expanded", pp->promiser);
+                return PROMISE_RESULT_FAIL;
+            }
 
             RvalDestroy(rval);
 
@@ -534,7 +539,7 @@ static bool Epimenides(EvalContext *ctx, const char *ns, const char *scope, cons
                 return false;
             }
 
-            if (Epimenides(ctx, ns, scope, var, (Rval) { BufferGet(exp), RVAL_TYPE_SCALAR}, level + 1))
+            if (Epimenides(ctx, ns, scope, var, (Rval) { BufferGet(exp), RVAL_TYPE_SCALAR, false}, level + 1))
             {
                 BufferDestroy(exp);
                 return true;

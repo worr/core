@@ -533,7 +533,7 @@ Promise *ExpandDeRefPromise(EvalContext *ctx, const Promise *pp, bool *excluded)
     }
     else
     {
-        pcopy->promisee = (Rval) {NULL, RVAL_TYPE_NOPROMISEE };
+        pcopy->promisee = (Rval) {NULL, RVAL_TYPE_NOPROMISEE, false };
     }
 
     pcopy->classes = xstrdup(pp->classes);

@@ -1355,7 +1355,7 @@ static FnCallResult FnCallPackagesMatching(ARG_UNUSED EvalContext *ctx, ARG_UNUS
         return FnFailure();
     }
 
-    return (FnCallResult) { FNCALL_SUCCESS, (Rval) { json, RVAL_TYPE_CONTAINER } };
+    return (FnCallResult) { FNCALL_SUCCESS, (Rval) { json, RVAL_TYPE_CONTAINER, true } };
 }
 
 /*********************************************************************/
@@ -1801,7 +1801,7 @@ static FnCallResult FnCallUrlGet(ARG_UNUSED EvalContext *ctx,
         Log(LOG_LEVEL_VERBOSE, "%s: found cached request for %s", fp->name, url);
         WriterClose(cache_w);
         JsonDestroy(options);
-        return (FnCallResult) { FNCALL_SUCCESS, (Rval) { JsonCopy(old_result), RVAL_TYPE_CONTAINER } };
+        return (FnCallResult) { FNCALL_SUCCESS, (Rval) { JsonCopy(old_result), RVAL_TYPE_CONTAINER, true } };
     }
 
     if (!CURL_INITIALIZED && curl_global_init(CURL_GLOBAL_DEFAULT) != 0)
@@ -1955,7 +1955,7 @@ static FnCallResult FnCallUrlGet(ARG_UNUSED EvalContext *ctx,
     WriterClose(cache_w);
 
     JsonDestroy(options);
-    return (FnCallResult) { FNCALL_SUCCESS, (Rval) { result, RVAL_TYPE_CONTAINER } };
+    return (FnCallResult) { FNCALL_SUCCESS, (Rval) { result, RVAL_TYPE_CONTAINER, true } };
 
 #else
 
@@ -2220,7 +2220,7 @@ static FnCallResult FnCallGetIndices(EvalContext *ctx, ARG_UNUSED const Policy *
             {
                 for (size_t i = 0; i < JsonLength(var_value); i++)
                 {
-                    Rval key = (Rval) { StringFromLong(i), RVAL_TYPE_SCALAR };
+                    Rval key = (Rval) { StringFromLong(i), RVAL_TYPE_SCALAR, true };
                     RlistAppendRval(&keys, key);
                 }
             }
@@ -3160,7 +3160,7 @@ static FnCallResult FnCallMergeData(EvalContext *ctx, ARG_UNUSED const Policy *p
     {
         JsonElement *first = JsonCopy(SeqAt(containers, 0));
         SeqDestroy(containers);
-        return  (FnCallResult) { FNCALL_SUCCESS, (Rval) { first, RVAL_TYPE_CONTAINER } };
+        return  (FnCallResult) { FNCALL_SUCCESS, (Rval) { first, RVAL_TYPE_CONTAINER, true } };
     }
     else
     {
@@ -3177,7 +3177,7 @@ static FnCallResult FnCallMergeData(EvalContext *ctx, ARG_UNUSED const Policy *p
         }
 
         SeqDestroy(containers);
-        return (FnCallResult) { FNCALL_SUCCESS, (Rval) { result, RVAL_TYPE_CONTAINER } };
+        return (FnCallResult) { FNCALL_SUCCESS, (Rval) { result, RVAL_TYPE_CONTAINER, true } };
     }
 
     assert(false);
@@ -3270,7 +3270,7 @@ static FnCallResult FnCallDatastate(EvalContext *ctx,
                                     ARG_UNUSED const Rlist *args)
 {
     JsonElement *state = DefaultTemplateData(ctx, NULL);
-    return  (FnCallResult) { FNCALL_SUCCESS, (Rval) { state, RVAL_TYPE_CONTAINER } };
+    return  (FnCallResult) { FNCALL_SUCCESS, (Rval) { state, RVAL_TYPE_CONTAINER, true } };
 }
 
 static FnCallResult FnCallBundlestate(EvalContext *ctx,
@@ -3293,7 +3293,7 @@ static FnCallResult FnCallBundlestate(EvalContext *ctx,
     }
     else
     {
-        return  (FnCallResult) { FNCALL_SUCCESS, (Rval) { state, RVAL_TYPE_CONTAINER } };
+        return  (FnCallResult) { FNCALL_SUCCESS, (Rval) { state, RVAL_TYPE_CONTAINER, true } };
     }
 }
 
@@ -3387,7 +3387,7 @@ static FnCallResult FnCallSelectServers(EvalContext *ctx,
                                         "select_server_bundle", "agent", NULL, NULL);
         PromiseType *tp = BundleAppendPromiseType(bp, "select_server");
 
-        PromiseTypeAppendPromise(tp, "function", (Rval) { NULL, RVAL_TYPE_NOPROMISEE }, NULL, NULL);
+        PromiseTypeAppendPromise(tp, "function", (Rval) { NULL, RVAL_TYPE_NOPROMISEE, true }, NULL, NULL);
     }
 
     size_t count = 0;
@@ -3491,7 +3491,7 @@ static FnCallResult FnCallShuffle(EvalContext *ctx, ARG_UNUSED const Policy *pol
     }
 
     SeqDestroy(seq);
-    return (FnCallResult) { FNCALL_SUCCESS, (Rval) { shuffled, RVAL_TYPE_LIST } };
+    return (FnCallResult) { FNCALL_SUCCESS, (Rval) { shuffled, RVAL_TYPE_LIST, true } };
 }
 
 
@@ -4233,7 +4233,7 @@ static FnCallResult FnCallSetop(EvalContext *ctx,
 
     StringSetDestroy(set_b);
 
-    return (FnCallResult) { FNCALL_SUCCESS, (Rval) { returnlist, RVAL_TYPE_LIST } };
+    return (FnCallResult) { FNCALL_SUCCESS, (Rval) { returnlist, RVAL_TYPE_LIST, true } };
 }
 
 static FnCallResult FnCallLength(EvalContext *ctx,
@@ -4600,7 +4600,7 @@ static FnCallResult FnCallSort(EvalContext *ctx, ARG_UNUSED const Policy *policy
         sorted = AlphaSortRListNames(RlistCopy(input_list));
     }
 
-    return (FnCallResult) { FNCALL_SUCCESS, (Rval) { sorted, RVAL_TYPE_LIST } };
+    return (FnCallResult) { FNCALL_SUCCESS, (Rval) { sorted, RVAL_TYPE_LIST, true } };
 }
 
 /*********************************************************************/
@@ -5431,7 +5431,7 @@ static FnCallResult FnCallRegExtract(EvalContext *ctx, ARG_UNUSED const Policy *
 
     if (container_mode)
     {
-        return (FnCallResult) { FNCALL_SUCCESS, (Rval) { json, RVAL_TYPE_CONTAINER } };
+        return (FnCallResult) { FNCALL_SUCCESS, (Rval) { json, RVAL_TYPE_CONTAINER, true } };
     }
     else
     {
@@ -5590,7 +5590,7 @@ static FnCallResult FnCallReverse(EvalContext *ctx, ARG_UNUSED const Policy *pol
     Rlist *copy = RlistCopy(input_list);
     RlistReverse(&copy);
 
-    return (FnCallResult) { FNCALL_SUCCESS, (Rval) { copy, RVAL_TYPE_LIST } };
+    return (FnCallResult) { FNCALL_SUCCESS, (Rval) { copy, RVAL_TYPE_LIST, true } };
 }
 
 
@@ -6144,7 +6144,7 @@ static FnCallResult FnCallReadData(ARG_UNUSED EvalContext *ctx,
             return FnFailure();
         }
 
-        return (FnCallResult) { FNCALL_SUCCESS, (Rval) { json, RVAL_TYPE_CONTAINER } };
+        return (FnCallResult) { FNCALL_SUCCESS, (Rval) { json, RVAL_TYPE_CONTAINER, true } };
     }
 
     bool yaml_mode = (0 == strcmp(requested_mode, "YAML"));
@@ -6179,7 +6179,7 @@ static FnCallResult FnCallReadData(ARG_UNUSED EvalContext *ctx,
     }
     else
     {
-        return (FnCallResult) { FNCALL_SUCCESS, (Rval) { json, RVAL_TYPE_CONTAINER } };
+        return (FnCallResult) { FNCALL_SUCCESS, (Rval) { json, RVAL_TYPE_CONTAINER, true } };
     }
 
     return FnFailure();
@@ -6217,7 +6217,7 @@ static FnCallResult FnCallParseJson(ARG_UNUSED EvalContext *ctx,
     }
     else
     {
-        return (FnCallResult) { FNCALL_SUCCESS, (Rval) { json, RVAL_TYPE_CONTAINER } };
+        return (FnCallResult) { FNCALL_SUCCESS, (Rval) { json, RVAL_TYPE_CONTAINER, true } };
     }
 
     return FnFailure();
@@ -6298,7 +6298,7 @@ static FnCallResult DataRead(EvalContext *ctx, const FnCall *fp, const Rlist *fi
         return FnFailure();
     }
 
-    return (FnCallResult) { FNCALL_SUCCESS, (Rval) { json, RVAL_TYPE_CONTAINER } };
+    return (FnCallResult) { FNCALL_SUCCESS, (Rval) { json, RVAL_TYPE_CONTAINER, true } };
 }
 
 /*********************************************************************/
@@ -6380,7 +6380,7 @@ static FnCallResult FnCallDataExpand(EvalContext *ctx,
     JsonElement *expanded = DataExpandElement(ctx, container);
     JsonDestroy(container);
 
-    return (FnCallResult) { FNCALL_SUCCESS, (Rval) { expanded, RVAL_TYPE_CONTAINER } };
+    return (FnCallResult) { FNCALL_SUCCESS, (Rval) { expanded, RVAL_TYPE_CONTAINER, true } };
 }
 
 /*********************************************************************/
@@ -7271,7 +7271,7 @@ static FnCallResult FnCallProcessExists(ARG_UNUSED EvalContext *ctx, ARG_UNUSED 
     }
     DeleteItemList(matched);
 
-    return (FnCallResult) { FNCALL_SUCCESS, (Rval) { json, RVAL_TYPE_CONTAINER } };
+    return (FnCallResult) { FNCALL_SUCCESS, (Rval) { json, RVAL_TYPE_CONTAINER, true } };
 }
 
 /*********************************************************************/

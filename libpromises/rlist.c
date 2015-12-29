@@ -292,7 +292,7 @@ static Rval RvalCopyScalar(Rval rval)
     assert(rval.type == RVAL_TYPE_SCALAR);
     const char * src = rval.item ? rval.item : "";
 
-    return (Rval) {xstrdup(src), RVAL_TYPE_SCALAR};
+    return (Rval) {xstrdup(src), RVAL_TYPE_SCALAR, rval.expanded};
 }
 
 Rlist *RlistAppendRval(Rlist **start, Rval rval)
@@ -409,28 +409,28 @@ Rval RvalNewRewriter(const void *item, RvalType type, JsonElement *map)
             free(buffer_to);
             free(buffer_from);
 
-            return (Rval) { ret, RVAL_TYPE_SCALAR };
+            return (Rval) { ret, RVAL_TYPE_SCALAR, false };
         }
         else
         {
-            return (Rval) { xstrdup(item), RVAL_TYPE_SCALAR };
+            return (Rval) { xstrdup(item), RVAL_TYPE_SCALAR, false };
         }
 
     case RVAL_TYPE_FNCALL:
-        return (Rval) { FnCallCopyRewriter(item, map), RVAL_TYPE_FNCALL };
+        return (Rval) { FnCallCopyRewriter(item, map), RVAL_TYPE_FNCALL, false };
 
     case RVAL_TYPE_LIST:
-        return (Rval) { RlistCopyRewriter(item, map), RVAL_TYPE_LIST };
+        return (Rval) { RlistCopyRewriter(item, map), RVAL_TYPE_LIST, false };
 
     case RVAL_TYPE_CONTAINER:
-        return (Rval) { JsonCopy(item), RVAL_TYPE_CONTAINER };
+        return (Rval) { JsonCopy(item), RVAL_TYPE_CONTAINER, false };
 
     case RVAL_TYPE_NOPROMISEE:
-        return ((Rval) {NULL, type});
+        return ((Rval) { NULL, type, false });
     }
 
     assert(false);
-    return ((Rval) { NULL, RVAL_TYPE_NOPROMISEE });
+    return ((Rval) { NULL, RVAL_TYPE_NOPROMISEE, false });
 }
 
 Rval RvalNew(const void *item, RvalType type)
@@ -445,7 +445,9 @@ Rval RvalCopyRewriter(Rval rval, JsonElement *map)
 
 Rval RvalCopy(Rval rval)
 {
-    return RvalNew(rval.item, rval.type);
+    Rval rv = RvalNew(rval.item, rval.type);
+    rv.expanded = rval.expanded;
+    return rv;
 }
 
 /*******************************************************************/
@@ -511,7 +513,7 @@ Rlist *RlistPrependScalarIdemp(Rlist **start, const char *scalar)
 
 Rlist *RlistAppendScalar(Rlist **start, const char *scalar)
 {
-    return RlistAppendRval(start, RvalCopyScalar((Rval) { (char *)scalar, RVAL_TYPE_SCALAR }));
+    return RlistAppendRval(start, RvalCopyScalar((Rval) { (char *)scalar, RVAL_TYPE_SCALAR, false }));
 }
 
 Rlist *RlistAppend(Rlist **start, const void *item, RvalType type)
@@ -554,7 +556,7 @@ Rlist *RlistAppend(Rlist **start, const void *item, RvalType type)
         lp->next = rp;
     }
 
-    rp->val = RvalCopy((Rval) {(void *) item, type});
+    rp->val = RvalCopy((Rval) {(void *) item, type, false});
 
     ThreadLock(cft_lock);
 
